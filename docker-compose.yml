@@ -1,9 +1,7 @@
-version: "3.9"
-
 services:
   visioncrafterai_be:
     build: .
-    container_name: visioncrafterai_be_api
+    container_name: visioncrafterai_api
     working_dir: /app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
@@ -12,4 +10,47 @@ services:
       - "8000:8000"
     environment:
       PYTHONUNBUFFERED: "1"
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/visioncrafter}
     restart: unless-stopped
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: visioncrafterai_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-visioncrafter}
+    # Host port is configurable via POSTGRES_PORT in `.env`, default 5432.
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-visioncrafter} -h localhost -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: visioncrafterai_pgadmin
+    environment:
+      # Must be a valid email address (domain must include a dot)
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - db
+    restart: unless-stopped
+    
+volumes:
+  pgdata:
+    driver: local
+  pgadmin-data:
+    driver: local
