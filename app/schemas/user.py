@@ -45,7 +45,6 @@ class UserUpdateRequest(BaseModel):
     """
 
     full_name: Optional[str] = Field(None, max_length=100)
-    email: Optional[EmailStr] = None
 
 
 class TokenResponse(BaseModel):

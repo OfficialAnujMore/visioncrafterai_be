@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"  # This means it will try to load from .env file
         case_sensitive = True
+        extra = "ignore"  # Ignore extra fields from .env that aren't defined here
 
 
 # Create a global settings object that we'll import everywhere
