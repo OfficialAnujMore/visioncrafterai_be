@@ -4,7 +4,8 @@ These endpoints are protected - user must be authenticated
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from app.schemas import UserResponse, UserUpdateRequest
 from app.models import User
@@ -17,7 +18,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(
     current_user: dict = Depends(get_current_user),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ) -> UserResponse:
     """
     Get current authenticated user's profile.
@@ -33,10 +34,12 @@ async def get_profile(
 
     # Extract user_id from token payload
     user_id = int(current_user["sub"])
+    print(user_id)
 
     # Query database
     statement = select(User).where(User.id == user_id)
-    user = session.exec(statement).first()
+    result = await session.execute(statement)
+    user = result.scalars().first()
 
     if not user:
         raise HTTPException(
@@ -57,7 +60,7 @@ async def get_profile(
 async def update_profile(
     update_data: UserUpdateRequest,
     current_user: dict = Depends(get_current_user),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ) -> UserResponse:
     """
     Update current user's profile.
@@ -77,34 +80,34 @@ async def update_profile(
 
     user_id = int(current_user["sub"])
     statement = select(User).where(User.id == user_id)
-    user = session.exec(statement).first()
+    result = await session.execute(statement)
+    user = result.scalars().first()
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
-    
+
     # Update only provided fields
     if update_data.full_name is not None:
         user.full_name = update_data.full_name
 
     try:
         session.add(user)
-        session.commit()
-        session.refresh(user)
+        await session.commit()
+        await session.refresh(user)
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update profile"
+            detail="Failed to update profile",
         )
-    
+
     return UserResponse(
         id=user.id,
         username=user.username,
         email=user.email,
         full_name=user.full_name,
         is_active=user.is_active,
-        created_at=user.created_at
+        created_at=user.created_at,
     )

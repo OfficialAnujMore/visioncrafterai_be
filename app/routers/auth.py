@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from app.schemas import (
     UserRegisterRequest,
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse)
 async def register(
-    user_data: UserRegisterRequest, session: Session = Depends(get_session)
+    user_data: UserRegisterRequest, session: AsyncSession = Depends(get_session)
 ) -> UserResponse:
     """
     Register a new user account.
@@ -46,8 +47,8 @@ async def register(
 
     try:
         session.add(db_user)
-        session.commit()
-        session.refresh(db_user)
+        await session.commit()
+        await session.refresh(db_user)
 
         return UserResponse(
             id=db_user.id,
@@ -60,14 +61,15 @@ async def register(
 
     except IntegrityError:
         # Email or username already exists (unique constraint violated)
-        session.rollback()
+        await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email or username already registered",
         )
     except Exception as e:
+        print('Register Exception', e)
 
-        session.rollback()
+        await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to register user",
@@ -76,7 +78,7 @@ async def register(
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
-    credentials: UserLoginRequest, session: Session = Depends(get_session)
+    credentials: UserLoginRequest, session: AsyncSession = Depends(get_session)
 ) -> TokenResponse:
     """
     Authenticate user and return JWT token.
@@ -93,7 +95,8 @@ async def login(
     """
 
     statement = select(User).where(User.email == credentials.email)
-    user = session.exec(statement).first()
+    result = await session.execute(statement)
+    user = result.scalars().first()
 
     if not user:
         raise HTTPException(
