@@ -10,7 +10,7 @@ services:
       - "8000:8000"
     environment:
       PYTHONUNBUFFERED: "1"
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/visioncrafter}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/visioncrafter}
     restart: unless-stopped
     depends_on:
       - db

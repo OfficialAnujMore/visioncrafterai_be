@@ -11,7 +11,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer
+from starlette.requests import Request
 from app.config import settings
 
 # ============================================================================
@@ -87,20 +88,41 @@ def verify_token(token: str) -> Optional[dict]:
 security = HTTPBearer()
 
 
-async def get_current_user(
-    credentials: HTTPAuthCredentials = Depends(security),
-) -> dict:
+async def get_current_user(request: Request) -> dict:
     """
     FastAPI dependency to verify JWT token from request headers.
 
     Use this in any endpoint you want to protect from unauthorized access.
-    Example
-        @app.get("/profile")
-        async def get_profile(current_user: dict = Depends(get_current_user)):
-        user_id = current_user["sub"]  # Get user ID from token
-        # ... fetch and return user data
+    
+    Args:
+        request: The HTTP request object (FastAPI provides this automatically)
+        
+    Returns:
+        dict: Token payload containing user info
+        
+    Raises:
+        HTTPException 401: If token is missing, invalid, or expired
     """
-    token = credentials.credentials
+    # Extract token from Authorization header
+    auth_header = request.headers.get("Authorization")
+    
+    if not auth_header:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Check if it starts with "Bearer "
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header format",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Extract the token
+    token = auth_header.split(" ")[1]
     payload = verify_token(token)
 
     if payload is None:
@@ -109,6 +131,7 @@ async def get_current_user(
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
     # Extract user_id from token payload
     # "sub" (subject) is standard JWT field for the user identifier
     user_id: Optional[str] = payload.get("sub")
