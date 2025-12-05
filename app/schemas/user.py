@@ -49,10 +49,18 @@ class UserUpdateRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     """
-    Schema for login response
-    Client receives token to use in future requests
+    Schema for login/refresh response
+    Returns both access token and refresh token
     """
 
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+class RefreshTokenRequest(BaseModel):
+    """
+    Schema for refresh token request
+    Client sends their refresh token to get a new access token
+    """
+    refresh_token: str

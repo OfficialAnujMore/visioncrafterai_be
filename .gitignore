@@ -35,3 +35,6 @@ docker-compose.override.yml
 
 # Byte-compiled and cache files from tests or tooling
 **/.cache/
+
+# Test cases folder
+testcases/
