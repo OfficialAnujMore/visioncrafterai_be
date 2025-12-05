@@ -15,3 +15,5 @@ docker logs -f visioncrafterai_be_api
 
 6. The --no-cache flag forces Docker to rebuild the image fresh and install all dependencies from requirements.txt. 
 docker-compose build --no-cache
+
+7
