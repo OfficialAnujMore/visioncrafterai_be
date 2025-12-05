@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # JWT Configuration
     JWT_SECRET_KEY: str = "VisionCrafterSecretKey"  # Secret key for JWT
     ALGORITHM: str = "HS256"  # JWT signing algorithm
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Token expiry time in minutes
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # Token expiry time in minutes (24 hours)
 
     # App Configuration
     APP_NAME: str = "VisionCrafterAI"

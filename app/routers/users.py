@@ -25,7 +25,7 @@ async def get_profile(
 
     Args:
         current_user: Verified JWT token payload (contains user_id)
-        session: Database session
+        session: Async database session
 
     Returns:
         UserResponse: User's profile information
@@ -34,7 +34,6 @@ async def get_profile(
 
     # Extract user_id from token payload
     user_id = int(current_user["sub"])
-    print(user_id)
 
     # Query database
     statement = select(User).where(User.id == user_id)
@@ -68,14 +67,13 @@ async def update_profile(
     Args:
         update_data: New full_name
         current_user: Verified JWT token payload
-        session: Database session
+        session: Async database session
 
     Returns:
         UserResponse: Updated user information
 
     What can be updated:
     - full_name: User's full name
-    - email: User's email address
     """
 
     user_id = int(current_user["sub"])

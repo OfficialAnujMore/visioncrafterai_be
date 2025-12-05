@@ -44,14 +44,19 @@ def custom_openapi():
             "description": "Enter your JWT token"
         }
     }
-    # Add security to protected endpoints
-    openapi_schema["components"]["schemas"]["HTTPBearer"] = {
-        "type": "object",
-        "properties": {
-            "scheme": {"type": "string"},
-            "credentials": {"type": "string"}
-        }
-    }
+    
+    # Mark protected endpoints with security requirement
+    protected_paths = [
+        "/users/profile",
+    ]
+    
+    for path in openapi_schema.get("paths", {}):
+        if path in protected_paths:
+            for method in openapi_schema["paths"][path]:
+                if method in ["get", "put", "post", "delete"]:
+                    if method in openapi_schema["paths"][path]:
+                        openapi_schema["paths"][path][method]["security"] = [{"Bearer": []}]
+    
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
