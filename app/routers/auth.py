@@ -20,6 +20,7 @@ from app.utils import (
     create_token_pair
 )
 from app.config import settings
+from app.locale import AUTH_MESSAGES
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -71,13 +72,13 @@ async def register(
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email or username already registered",
+            detail=AUTH_MESSAGES["email_already_exists"],
         )
     except Exception as e:
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to register user",
+            detail=AUTH_MESSAGES["registration_failed"],
         )
 
 @router.post("/login", response_model=TokenResponse)
@@ -104,12 +105,12 @@ async def login(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=AUTH_MESSAGES["invalid_credentials"]
         )
 
     if not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=AUTH_MESSAGES["invalid_credentials"]
         )
     
     # Create both access and refresh tokens
@@ -161,7 +162,7 @@ async def refresh_access_token(
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token"
+            detail=AUTH_MESSAGES["refresh_token_invalid"]
         )
     
     # Get user from database
@@ -172,7 +173,7 @@ async def refresh_access_token(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
+            detail=AUTH_MESSAGES["invalid_credentials"]
         )
     
     # Create new token pair

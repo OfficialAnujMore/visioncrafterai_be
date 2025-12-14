@@ -1,21 +1,20 @@
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 
 class Settings(BaseSettings):
     # Database connection URL
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://user:password@localhost:5432/visioncrafter"
-    )
+    DATABASE_URL: str
 
-    # JWT Configuration
-    JWT_SECRET_KEY: str = "VisionCrafterSecretKey"  # Secret key for JWT
-    ALGORITHM: str = "HS256"  # JWT signing algorithm
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Token expiry time in minutes (30 minutes)
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7 # Token expiry time 7 days
+    # JWT Configuration (All required - no defaults)
+    JWT_SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_DAYS: int
 
     # App Configuration
-    APP_NAME: str = "VisionCrafterAI"
-    DEBUG: bool = True
+    APP_NAME: str
+    DEBUG: bool
 
     class Config:
         env_file = ".env"  # This means it will try to load from .env file

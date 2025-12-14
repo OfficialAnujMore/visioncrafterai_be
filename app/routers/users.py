@@ -11,6 +11,7 @@ from app.schemas import UserResponse, UserUpdateRequest
 from app.models import User
 from app.database import get_session
 from app.utils import get_current_user
+from app.locale import USER_MESSAGES
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -42,7 +43,7 @@ async def get_profile(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=USER_MESSAGES["user_not_found"]
         )
 
     return UserResponse(
@@ -83,7 +84,7 @@ async def update_profile(
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=USER_MESSAGES["user_not_found"]
         )
 
     # Update only provided fields
@@ -98,7 +99,7 @@ async def update_profile(
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update profile",
+            detail=USER_MESSAGES["profile_update_failed"],
         )
 
     return UserResponse(

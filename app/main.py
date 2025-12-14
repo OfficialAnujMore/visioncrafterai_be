@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi.openapi.utils import get_openapi
 from app.routers import auth_router, users_router
 from app.database import create_db_and_tables
+from app.config import settings
 
 
 @asynccontextmanager
@@ -17,10 +18,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="VisionCrafterAI Backend",
+    title=f"{settings.APP_NAME} Backend",
     lifespan=lifespan,
     version="1.0.0",
-    description="Backend API for VisionCrafterAI"
+    description=f"Backend API for {settings.APP_NAME}"
 )
 
 app.include_router(auth_router)
@@ -31,9 +32,9 @@ def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="VisionCrafterAI Backend",
+        title=f"{settings.APP_NAME} Backend",
         version="1.0.0",
-        description="Backend API for VisionCrafterAI",
+        description=f"Backend API for {settings.APP_NAME}",
         routes=app.routes,
     )
     openapi_schema["components"]["securitySchemes"] = {
@@ -66,4 +67,4 @@ app.openapi = custom_openapi
 
 @app.get("/")
 def root():
-    return {"service": "visioncrafterai_be", "status": "ok"}
+    return {"service": settings.APP_NAME, "status": "ok"}
