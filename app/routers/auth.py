@@ -25,24 +25,24 @@ from app.locale import AUTH_MESSAGES
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=TokenResponse)
 async def register(
     user_data: UserRegisterRequest, session: AsyncSession = Depends(get_session)
-) -> UserResponse:
+) -> TokenResponse:
     """
-    Register a new user account.
+    Register a new user account and return JWT tokens.
 
     Args:
         user_data: Contains username, email, password, first_name, last_name
         session: Database session (FastAPI provides automatically)
 
     Returns:
-        UserResponse: The created user (without password)
+        TokenResponse: JWT tokens and user info
 
     Raises:
         HTTPException 400: If email or username already exists
     """
-
+    print("User data", user_data)
     hashed_password = hash_password(user_data.password)
 
     db_user = User(
@@ -59,14 +59,31 @@ async def register(
         await session.commit()
         await session.refresh(db_user)
 
-        return UserResponse(
-            id=db_user.id,
-            username=db_user.username,
-            email=db_user.email,
-            first_name=db_user.first_name,
-            last_name=db_user.last_name,
-            is_active=db_user.is_active,
-            created_at=db_user.created_at,
+        # Create both access and refresh tokens
+        token_pair = create_token_pair(db_user.id)
+        
+        # Store refresh token in database for tracking and revocation
+        refresh_token_record = RefreshToken(
+            user_id=db_user.id,
+            token=token_pair["refresh_token"],
+            expires_at=(datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)).replace(tzinfo=None)
+        )
+        session.add(refresh_token_record)
+        await session.commit()
+
+        return TokenResponse(
+            access_token=token_pair["access_token"],
+            refresh_token=token_pair["refresh_token"],
+            token_type="bearer",
+            user=UserResponse(
+                id=db_user.id,
+                username=db_user.username,
+                email=db_user.email,
+                first_name=db_user.first_name,
+                last_name=db_user.last_name,
+                is_active=db_user.is_active,
+                created_at=db_user.created_at,
+            )
         )
 
     except IntegrityError:
@@ -110,7 +127,12 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=AUTH_MESSAGES["invalid_credentials"]
         )
 
-    if not verify_password(credentials.password, user.hashed_password):
+    print(f"Login attempt for user: {user.email}")
+    print(f"Password from request: {credentials.password}")
+    password_valid = verify_password(credentials.password, user.hashed_password)
+    print(f"Password verification result: {password_valid}")
+    
+    if not password_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=AUTH_MESSAGES["invalid_credentials"]
         )
