@@ -33,7 +33,7 @@ async def register(
     Register a new user account.
 
     Args:
-        user_data: Contains username, email, password, full_name
+        user_data: Contains username, email, password, first_name, last_name
         session: Database session (FastAPI provides automatically)
 
     Returns:
@@ -48,7 +48,8 @@ async def register(
     db_user = User(
         username=user_data.username,
         email=user_data.email,
-        full_name=user_data.full_name,
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
         hashed_password=hashed_password,
         is_active=True,
     )
@@ -62,7 +63,8 @@ async def register(
             id=db_user.id,
             username=db_user.username,
             email=db_user.email,
-            full_name=db_user.full_name,
+            first_name=db_user.first_name,
+            last_name=db_user.last_name,
             is_active=db_user.is_active,
             created_at=db_user.created_at,
         )
@@ -133,7 +135,8 @@ async def login(
             id=user.id,
             username=user.username,
             email=user.email,
-            full_name=user.full_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
             is_active=user.is_active,
             created_at=user.created_at
         )
@@ -202,7 +205,8 @@ async def refresh_access_token(
             id=user.id,
             username=user.username,
             email=user.email,
-            full_name=user.full_name,
+            first_name=user.first_name,
+            last_name=user.last_name,
             is_active=user.is_active,
             created_at=user.created_at
         )

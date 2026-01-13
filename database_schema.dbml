@@ -3,7 +3,8 @@
 
 Table user {
   id integer [pk, increment]                          // Primary Key
-  full_name varchar [not null]                        // User's full name
+  first_name varchar [not null]                       // User's first name
+  last_name varchar [not null]                        // User's last name
   username varchar [unique, not null]                 // Unique username (indexed)
   email varchar [unique, not null]                    // Unique email address (indexed)
   hashed_password varchar [not null]                  // Bcrypt hashed password

@@ -9,7 +9,8 @@ class UserRegisterRequest(BaseModel):
     (...) Means required field
     """
 
-    full_name: str = Field(..., min_length=1, max_length=100)
+    first_name: str = Field(..., min_length=1, max_length=50)
+    last_name: str = Field(..., min_length=1, max_length=50)
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr  # EmailStr validates email format
     password: str = Field(..., min_length=8)
@@ -33,7 +34,8 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
-    full_name: str
+    first_name: str
+    last_name: str
     is_active: bool
     created_at: datetime
 
@@ -44,7 +46,8 @@ class UserUpdateRequest(BaseModel):
     Note: username is immutable for security
     """
 
-    full_name: Optional[str] = Field(None, max_length=100)
+    first_name: Optional[str] = Field(None, max_length=50)
+    last_name: Optional[str] = Field(None, max_length=50)
 
 
 class TokenResponse(BaseModel):

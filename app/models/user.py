@@ -7,7 +7,8 @@ class User(SQLModel, table=True):
     """User database model - represents users table in PostgreSQL"""
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    full_name: str
+    first_name: str
+    last_name: str
     username: str = Field(unique=True, index=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str

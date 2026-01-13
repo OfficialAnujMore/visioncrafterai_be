@@ -50,7 +50,8 @@ async def get_profile(
         id=user.id,
         username=user.username,
         email=user.email,
-        full_name=user.full_name,
+        first_name=user.first_name,
+        last_name=user.last_name,
         is_active=user.is_active,
         created_at=user.created_at,
     )
@@ -66,7 +67,7 @@ async def update_profile(
     Update current user's profile.
 
     Args:
-        update_data: New full_name
+        update_data: New first_name and/or last_name
         current_user: Verified JWT token payload
         session: Async database session
 
@@ -74,7 +75,8 @@ async def update_profile(
         UserResponse: Updated user information
 
     What can be updated:
-    - full_name: User's full name
+    - first_name: User's first name
+    - last_name: User's last name
     """
 
     user_id = int(current_user["sub"])
@@ -88,8 +90,10 @@ async def update_profile(
         )
 
     # Update only provided fields
-    if update_data.full_name is not None:
-        user.full_name = update_data.full_name
+    if update_data.first_name is not None:
+        user.first_name = update_data.first_name
+    if update_data.last_name is not None:
+        user.last_name = update_data.last_name
 
     try:
         session.add(user)
@@ -106,7 +110,8 @@ async def update_profile(
         id=user.id,
         username=user.username,
         email=user.email,
-        full_name=user.full_name,
+        first_name=user.first_name,
+        last_name=user.last_name,
         is_active=user.is_active,
         created_at=user.created_at,
     )
