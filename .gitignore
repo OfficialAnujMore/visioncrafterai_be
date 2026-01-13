@@ -34,5 +34,7 @@ coverage.xml
 # Byte-compiled and cache files from tests or tooling
 **/.cache/
 
+DEV_COMMANDS.md
+
 # Test cases folder
 testcases/
