@@ -8,21 +8,14 @@ All error messages, success messages, and API responses are centralized here
 # ============================================================================
 
 AUTH_MESSAGES = {
-    # Registration
-    "user_registered_successfully": "User registered successfully",
-    "email_already_exists": "Email or username already registered",
-    "registration_failed": "Failed to register user",
-    
-    # Login
-    "login_successful": "Login successful",
-    "invalid_credentials": "Invalid email or password",
+    # Google OAuth
+    "google_auth_successful": "Google authentication successful",
+    "google_auth_failed": "Failed to authenticate with Google",
     
     # Token
     "token_expired": "Token has expired",
     "token_invalid": "Invalid or expired token",
     "token_missing_user_id": "Invalid token - missing user ID",
-    "refresh_token_invalid": "Invalid or expired refresh token",
-    "token_refreshed": "Token refreshed successfully",
 }
 
 # ============================================================================
