@@ -1,10 +1,15 @@
 from datetime import datetime, timezone
-from typing import Optional
-from sqlmodel import SQLModel, Field
+from typing import Optional, TYPE_CHECKING
+from sqlmodel import SQLModel, Field, Relationship
+
+if TYPE_CHECKING:
+    from .project import Project
 
 
 class User(SQLModel, table=True):
     """User model for Google OAuth authentication"""
+    
+    __tablename__ = "user"
     
     id: Optional[int] = Field(default=None, primary_key=True)
     google_id: str = Field(unique=True, index=True)  # Google's unique user ID
@@ -14,3 +19,6 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    
+    # Relationship
+    projects: list["Project"] = Relationship(back_populates="user")

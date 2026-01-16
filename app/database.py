@@ -2,8 +2,7 @@ from sqlmodel import SQLModel, create_engine, Session
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
-# Import models to register them with SQLModel metadata
-from app.models import User  # noqa: F401
+from app.models import User, Project
 
 # Create async engine for PostgreSQL
 engine = create_async_engine(

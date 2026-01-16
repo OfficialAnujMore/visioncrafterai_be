@@ -2,7 +2,8 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
 from contextlib import asynccontextmanager
-from app.routers import auth_router
+from app.routers import auth_router, project_router
+from app.routers import imagekit
 from app.database import create_db_and_tables
 from app.config import settings
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,6 +50,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 app.include_router(auth_router)
+app.include_router(project_router)
+app.include_router(imagekit.router)
 
 
 @app.get("/")

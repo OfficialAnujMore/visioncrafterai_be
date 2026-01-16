@@ -38,3 +38,6 @@ DEV_COMMANDS.md
 
 # Test cases folder
 testcases/
+
+/alembic
+alembic.ini
