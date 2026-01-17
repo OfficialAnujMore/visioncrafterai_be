@@ -8,17 +8,18 @@ from app.schemas.project import (
     ProjectResponse,
     UpdateProjectRequest,
 )
+from app.schemas.common import ApiResponse
 from app.models.project import Project
 from app.database import get_session
 
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
 
 
-@router.post("/create", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=ApiResponse[ProjectResponse], status_code=status.HTTP_201_CREATED)
 async def create_project(
     project_data: CreateProjectRequest,
     session: AsyncSession = Depends(get_session)
-) -> ProjectResponse:
+) -> ApiResponse[ProjectResponse]:
     """
     Create a new project.
 
@@ -47,7 +48,7 @@ async def create_project(
         await session.commit()
         await session.refresh(db_project)
 
-        return ProjectResponse(
+        project_response = ProjectResponse(
             id=db_project.id,
             user_id=db_project.user_id,
             title=db_project.title,
@@ -60,6 +61,12 @@ async def create_project(
             updated_at=db_project.updated_at,
         )
 
+        return ApiResponse(
+            success=True,
+            message="Project created successfully",
+            data=project_response
+        )
+
     except Exception as e:
         await session.rollback()
         raise HTTPException(
@@ -68,11 +75,11 @@ async def create_project(
         )
 
 
-@router.get("/{project_id}", response_model=ProjectResponse)
+@router.get("/{project_id}", response_model=ApiResponse[ProjectResponse])
 async def get_project(
     project_id: int,
     session: AsyncSession = Depends(get_session)
-) -> ProjectResponse:
+) -> ApiResponse[ProjectResponse]:
     """
     Get a project by ID.
 
@@ -96,25 +103,28 @@ async def get_project(
             detail=f"Project with id {project_id} not found"
         )
 
-    return ProjectResponse(
-        id=project.id,
-        user_id=project.user_id,
-        title=project.title,
-        project_url=project.project_url,
-        thumbnail_url=project.thumbnail_url,
-        width=project.width,
-        height=project.height,
-        file_type=project.file_type,
-        created_at=project.created_at,
-        updated_at=project.updated_at,
+    return ApiResponse(
+        success=True,
+        data=ProjectResponse(
+            id=project.id,
+            user_id=project.user_id,
+            title=project.title,
+            project_url=project.project_url,
+            thumbnail_url=project.thumbnail_url,
+            width=project.width,
+            height=project.height,
+            file_type=project.file_type,
+            created_at=project.created_at,
+            updated_at=project.updated_at,
+        )
     )
 
 
-@router.get("/user/{user_id}", response_model=list[ProjectResponse])
+@router.get("/user/{user_id}", response_model=ApiResponse[list[ProjectResponse]])
 async def get_user_projects(
     user_id: int,
     session: AsyncSession = Depends(get_session)
-) -> list[ProjectResponse]:
+) -> ApiResponse[list[ProjectResponse]]:
     """
     Get all projects for a specific user.
 
@@ -129,7 +139,7 @@ async def get_user_projects(
     result = await session.execute(statement)
     projects = result.scalars().all()
 
-    return [
+    projects_list = [
         ProjectResponse(
             id=project.id,
             user_id=project.user_id,
@@ -145,13 +155,18 @@ async def get_user_projects(
         for project in projects
     ]
 
+    return ApiResponse(
+        success=True,
+        data=projects_list
+    )
 
-@router.put("/{project_id}", response_model=ProjectResponse)
+
+@router.put("/{project_id}", response_model=ApiResponse[ProjectResponse])
 async def update_project(
     project_id: int,
     project_data: UpdateProjectRequest,
     session: AsyncSession = Depends(get_session)
-) -> ProjectResponse:
+) -> ApiResponse[ProjectResponse]:
     """
     Update an existing project.
 
@@ -197,7 +212,7 @@ async def update_project(
         await session.commit()
         await session.refresh(project)
 
-        return ProjectResponse(
+        project_response = ProjectResponse(
             id=project.id,
             user_id=project.user_id,
             title=project.title,
@@ -208,6 +223,12 @@ async def update_project(
             file_type=project.file_type,
             created_at=project.created_at,
             updated_at=project.updated_at,
+        )
+
+        return ApiResponse(
+            success=True,
+            message="Project updated successfully",
+            data=project_response
         )
 
     except Exception as e:

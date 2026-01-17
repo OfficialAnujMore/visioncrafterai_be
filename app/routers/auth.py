@@ -4,6 +4,7 @@ from sqlmodel import select
 from datetime import datetime, timezone
 
 from app.schemas import GoogleAuthRequest, UserResponse, AuthResponse
+from app.schemas.common import ApiResponse
 from app.models import User
 from app.database import get_session
 from app.utils import verify_google_token, create_access_token
@@ -12,10 +13,10 @@ from app.locale import AUTH_MESSAGES
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.post("/google", response_model=AuthResponse)
+@router.post("/google", response_model=ApiResponse[AuthResponse])
 async def google_auth(
     auth_data: GoogleAuthRequest, session: AsyncSession = Depends(get_session)
-) -> AuthResponse:
+) -> ApiResponse[AuthResponse]:
     """
     Authenticate user with Google OAuth token.
     Creates a new user if they don't exist, or logs in existing user.
@@ -60,7 +61,7 @@ async def google_auth(
     # Create JWT access token
     access_token = create_access_token(user.id)
     
-    return AuthResponse(
+    auth_response = AuthResponse(
         access_token=access_token,
         token_type="bearer",
         user=UserResponse(
@@ -72,4 +73,10 @@ async def google_auth(
             is_active=user.is_active,
             created_at=user.created_at,
         )
+    )
+    
+    return ApiResponse(
+        success=True,
+        message="Authentication successful",
+        data=auth_response
     )

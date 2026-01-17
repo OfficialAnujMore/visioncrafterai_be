@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import HTTPException
+from fastapi.exceptions import HTTPException, RequestValidationError
 from contextlib import asynccontextmanager
 from app.routers import auth_router, project_router
 from app.routers import imagekit
 from app.database import create_db_and_tables
 from app.config import settings
+from app.schemas.common import ApiErrorResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -41,11 +42,24 @@ app.add_middleware(
 async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "message": exc.detail,
-            "statusCode": exc.status_code,
-            "error": exc.detail
-        },
+        content=ApiErrorResponse(
+            success=False,
+            message=exc.detail,
+            statusCode=exc.status_code
+        ).model_dump()
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=ApiErrorResponse(
+            success=False,
+            message="Validation error",
+            error=str(exc),
+            statusCode=status.HTTP_422_UNPROCESSABLE_ENTITY
+        ).model_dump()
     )
 
 
