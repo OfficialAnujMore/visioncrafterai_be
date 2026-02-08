@@ -16,20 +16,53 @@ from app.config import settings
 security = HTTPBearer()
 
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(user_id: int, expires_delta: Optional[timedelta] = None) -> str:
     """
     Create a JWT access token for authenticated user.
     
     Args:
         user_id: The user's database ID
+        expires_delta: Optional custom expiration time (default: ACCESS_TOKEN_EXPIRE_MINUTES)
         
     Returns:
         str: JWT access token
     """
-    to_encode = {"sub": str(user_id)}
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    to_encode = {"sub": str(user_id), "type": "access"}
+    
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+    
+    to_encode.update({"exp": expire})
+    
+    encoded_jwt = jwt.encode(
+        to_encode, settings.JWT_SECRET_KEY, algorithm=settings.ALGORITHM
     )
+    return encoded_jwt
+
+
+def create_refresh_token(user_id: int, expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Create a JWT refresh token for authenticated user.
+    Refresh tokens have a longer expiration time (7 days).
+    
+    Args:
+        user_id: The user's database ID
+        expires_delta: Optional custom expiration time (default: 7 days)
+        
+    Returns:
+        str: JWT refresh token
+    """
+    to_encode = {"sub": str(user_id), "type": "refresh"}
+    
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(days=7)
+    
     to_encode.update({"exp": expire})
     
     encoded_jwt = jwt.encode(
@@ -122,6 +155,54 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return payload
+
+
+def get_token_from_request(request) -> tuple[Optional[str], Optional[str]]:
+    """
+    Extract access_token and refresh_token from request cookies.
+    
+    Args:
+        request: FastAPI Request object
+        
+    Returns:
+        tuple: (access_token, refresh_token) or (None, None)
+    """
+    access_token = request.cookies.get("access_token")
+    refresh_token = request.cookies.get("refresh_token")
+    return access_token, refresh_token
+
+
+async def verify_token_type(token: str, expected_type: str = "access") -> dict:
+    """
+    Verify token and check its type (access or refresh).
+    
+    Args:
+        token: JWT token to verify
+        expected_type: Expected token type ("access" or "refresh")
+        
+    Returns:
+        dict: Token payload
+        
+    Raises:
+        HTTPException: If token is invalid or wrong type
+    """
+    payload = verify_token(token)
+    
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid or expired {expected_type} token",
+        )
+    
+    # Check token type
+    token_type = payload.get("type", "access")
+    if token_type != expected_type:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token type. Expected {expected_type}, got {token_type}",
         )
     
     return payload
