@@ -11,14 +11,20 @@ from app.schemas.project import (
 from app.schemas.common import ApiResponse
 from app.models.project import Project
 from app.database import get_session
+from app.utils.security import get_current_user
+from app.utils.imagekit import delete_image_from_imagekit
+from sqlalchemy import delete
 
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
 
 
-@router.post("/create", response_model=ApiResponse[ProjectResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/create",
+    response_model=ApiResponse[ProjectResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_project(
-    project_data: CreateProjectRequest,
-    session: AsyncSession = Depends(get_session)
+    project_data: CreateProjectRequest, session: AsyncSession = Depends(get_session)
 ) -> ApiResponse[ProjectResponse]:
     """
     Create a new project.
@@ -34,6 +40,7 @@ async def create_project(
         HTTPException 500: If project creation fails
     """
     db_project = Project(
+        file_id=project_data.file_id,
         user_id=project_data.user_id,
         title=project_data.title,
         project_url=project_data.project_url,
@@ -50,6 +57,7 @@ async def create_project(
 
         project_response = ProjectResponse(
             id=db_project.id,
+            file_id=db_project.file_id,
             user_id=db_project.user_id,
             title=db_project.title,
             project_url=db_project.project_url,
@@ -62,9 +70,7 @@ async def create_project(
         )
 
         return ApiResponse(
-            success=True,
-            message="Project created successfully",
-            data=project_response
+            success=True, message="Project created successfully", data=project_response
         )
 
     except Exception as e:
@@ -77,8 +83,7 @@ async def create_project(
 
 @router.get("/{project_id}", response_model=ApiResponse[ProjectResponse])
 async def get_project(
-    project_id: int,
-    session: AsyncSession = Depends(get_session)
+    project_id: int, session: AsyncSession = Depends(get_session)
 ) -> ApiResponse[ProjectResponse]:
     """
     Get a project by ID.
@@ -100,13 +105,14 @@ async def get_project(
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project with id {project_id} not found"
+            detail=f"Project with id {project_id} not found",
         )
 
     return ApiResponse(
         success=True,
         data=ProjectResponse(
             id=project.id,
+            file_id=project.file_id,
             user_id=project.user_id,
             title=project.title,
             project_url=project.project_url,
@@ -116,14 +122,13 @@ async def get_project(
             file_type=project.file_type,
             created_at=project.created_at,
             updated_at=project.updated_at,
-        )
+        ),
     )
 
 
 @router.get("/user/{user_id}", response_model=ApiResponse[list[ProjectResponse]])
 async def get_user_projects(
-    user_id: int,
-    session: AsyncSession = Depends(get_session)
+    user_id: int, session: AsyncSession = Depends(get_session)
 ) -> ApiResponse[list[ProjectResponse]]:
     """
     Get all projects for a specific user.
@@ -135,13 +140,18 @@ async def get_user_projects(
     Returns:
         list[ProjectResponse]: List of projects belonging to the user
     """
-    statement = select(Project).where(Project.user_id == user_id).order_by(Project.created_at.desc())
+    statement = (
+        select(Project)
+        .where(Project.user_id == user_id)
+        .order_by(Project.created_at.desc())
+    )
     result = await session.execute(statement)
     projects = result.scalars().all()
 
     projects_list = [
         ProjectResponse(
             id=project.id,
+            file_id= project.file_id,
             user_id=project.user_id,
             title=project.title,
             project_url=project.project_url,
@@ -155,17 +165,14 @@ async def get_user_projects(
         for project in projects
     ]
 
-    return ApiResponse(
-        success=True,
-        data=projects_list
-    )
+    return ApiResponse(success=True, data=projects_list)
 
 
 @router.put("/{project_id}", response_model=ApiResponse[ProjectResponse])
 async def update_project(
     project_id: int,
     project_data: UpdateProjectRequest,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[ProjectResponse]:
     """
     Update an existing project.
@@ -188,7 +195,7 @@ async def update_project(
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project with id {project_id} not found"
+            detail=f"Project with id {project_id} not found",
         )
 
     # Update only provided fields
@@ -226,9 +233,7 @@ async def update_project(
         )
 
         return ApiResponse(
-            success=True,
-            message="Project updated successfully",
-            data=project_response
+            success=True, message="Project updated successfully", data=project_response
         )
 
     except Exception as e:
@@ -239,33 +244,46 @@ async def update_project(
         )
 
 
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
-    project_id: int,
-    session: AsyncSession = Depends(get_session)
+    file_id: str,
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(get_current_user),
 ) -> None:
     """
-    Delete a project.
+    Delete a project by file_id.
 
-    Args:
-        project_id: The ID of the project to delete
-        session: Database session
-
-    Raises:
-        HTTPException 404: If project not found
+    Steps:
+    1. Find the project by file_id and ensure it exists.
+    2. Verify the current user owns the project.
+    3. Call ImageKit API to delete the file by file_id.
+    4. If ImageKit deletion succeeds, delete the DB row where file_id == file_id.
     """
-    statement = select(Project).where(Project.id == project_id)
+    statement = select(Project).where(Project.file_id == file_id)
     result = await session.execute(statement)
     project = result.scalars().first()
 
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project with id {project_id} not found"
+            detail=f"Project with file_id {file_id} not found",
+        )
+
+    current_user_id = int(current_user.get("sub"))
+
+    if project.user_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to delete this project",
         )
 
     try:
-        await session.delete(project)
+        # Delete on ImageKit first (delete_image_from_imagekit raises on error)
+        await delete_image_from_imagekit(file_id)
+
+        # If ImageKit deletion succeeded, delete DB row using where(file_id == file_id)
+        delete_stmt = delete(Project).where(Project.file_id == file_id)
+        await session.execute(delete_stmt)
         await session.commit()
     except Exception as e:
         await session.rollback()

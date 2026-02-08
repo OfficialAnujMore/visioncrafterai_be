@@ -20,6 +20,7 @@ class Project(SQLModel, table=True):
     __tablename__ = "projects"
 
     id: int | None = Field(default=None, primary_key=True)
+    file_id: str
     user_id: int = Field(foreign_key="user.id", index=True)
     title: str
     project_url: str
@@ -33,6 +34,5 @@ class Project(SQLModel, table=True):
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
-    
     # Relationship
     user: "User" = Relationship(back_populates="projects")

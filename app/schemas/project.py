@@ -5,6 +5,8 @@ from pydantic import BaseModel
 
 class CreateProjectRequest(BaseModel):
     """Schema for creating a new project"""
+
+    file_id: str
     user_id: int
     title: str
     project_url: str
@@ -17,6 +19,7 @@ class CreateProjectRequest(BaseModel):
 class ProjectResponse(BaseModel):
     """Schema for project response"""
     id: int
+    file_id: str
     user_id: int
     title: str
     project_url: str
@@ -30,6 +33,7 @@ class ProjectResponse(BaseModel):
 
 class UpdateProjectRequest(BaseModel):
     """Schema for updating a project"""
+
     title: str | None = None
     project_url: str | None = None
     thumbnail_url: str | None = None
