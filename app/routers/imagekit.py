@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from imagekitio import ImageKit
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 from app.schemas.common import ApiResponse
+from app.utils.security import get_current_user_from_cookie
 
 load_dotenv()
 
@@ -19,9 +20,12 @@ class ImageKitAuthResponse(BaseModel):
     signature: str
 
 @router.get("/auth", response_model=ApiResponse[ImageKitAuthResponse])
-async def get_imagekit_auth():
+async def get_imagekit_auth(
+    current_user: dict = Depends(get_current_user_from_cookie)
+):
     """
-    Generate authentication parameters for ImageKit upload
+    Generate authentication parameters for ImageKit upload.
+    Requires authentication via JWT token from cookies.
     """  
     try:
         auth_params = imagekit.helper.get_authentication_parameters()

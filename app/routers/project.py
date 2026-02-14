@@ -11,7 +11,7 @@ from app.schemas.project import (
 from app.schemas.common import ApiResponse
 from app.models.project import Project
 from app.database import get_session
-from app.utils.security import get_current_user
+from app.utils.security import get_current_user_from_cookie
 from app.utils.imagekit import delete_image_from_imagekit
 from sqlalchemy import delete
 
@@ -24,7 +24,9 @@ router = APIRouter(prefix="/api/projects", tags=["Projects"])
     status_code=status.HTTP_201_CREATED,
 )
 async def create_project(
-    project_data: CreateProjectRequest, session: AsyncSession = Depends(get_session)
+    project_data: CreateProjectRequest,
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(get_current_user_from_cookie),
 ) -> ApiResponse[ProjectResponse]:
     """
     Create a new project.
@@ -39,9 +41,11 @@ async def create_project(
     Raises:
         HTTPException 500: If project creation fails
     """
+    user_id = int(current_user.get("sub"))
+    
     db_project = Project(
         file_id=project_data.file_id,
-        user_id=project_data.user_id,
+        user_id=user_id,
         title=project_data.title,
         project_url=project_data.project_url,
         thumbnail_url=project_data.thumbnail_url,
@@ -83,7 +87,9 @@ async def create_project(
 
 @router.get("/{project_id}", response_model=ApiResponse[ProjectResponse])
 async def get_project(
-    project_id: int, session: AsyncSession = Depends(get_session)
+    project_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(get_current_user_from_cookie),
 ) -> ApiResponse[ProjectResponse]:
     """
     Get a project by ID.
@@ -98,6 +104,8 @@ async def get_project(
     Raises:
         HTTPException 404: If project not found
     """
+    current_user_id = int(current_user.get("sub"))
+    
     statement = select(Project).where(Project.id == project_id)
     result = await session.execute(statement)
     project = result.scalars().first()
@@ -106,6 +114,12 @@ async def get_project(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project with id {project_id} not found",
+        )
+    
+    if project.user_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have access to this project",
         )
 
     return ApiResponse(
@@ -128,7 +142,9 @@ async def get_project(
 
 @router.get("/user/{user_id}", response_model=ApiResponse[list[ProjectResponse]])
 async def get_user_projects(
-    user_id: int, session: AsyncSession = Depends(get_session)
+    user_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(get_current_user_from_cookie),
 ) -> ApiResponse[list[ProjectResponse]]:
     """
     Get all projects for a specific user.
@@ -136,13 +152,22 @@ async def get_user_projects(
     Args:
         user_id: The ID of the user
         session: Database session
+        current_user: Current authenticated user from JWT
 
     Returns:
         list[ProjectResponse]: List of projects belonging to the user
     """
+    current_user_id = int(current_user.get("sub"))
+    
+    if user_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only access your own projects",
+        )
+    
     statement = (
         select(Project)
-        .where(Project.user_id == user_id)
+        .where(Project.user_id == current_user_id)
         .order_by(Project.created_at.desc())
     )
     result = await session.execute(statement)
@@ -173,6 +198,7 @@ async def update_project(
     project_id: int,
     project_data: UpdateProjectRequest,
     session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(get_current_user_from_cookie),
 ) -> ApiResponse[ProjectResponse]:
     """
     Update an existing project.
@@ -181,13 +207,17 @@ async def update_project(
         project_id: The ID of the project to update
         project_data: Fields to update
         session: Database session
+        current_user: Current authenticated user from JWT
 
     Returns:
         ProjectResponse: The updated project
 
     Raises:
         HTTPException 404: If project not found
+        HTTPException 403: If user is not authorized to update the project
     """
+    current_user_id = int(current_user.get("sub"))
+    
     statement = select(Project).where(Project.id == project_id)
     result = await session.execute(statement)
     project = result.scalars().first()
@@ -196,6 +226,12 @@ async def update_project(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project with id {project_id} not found",
+        )
+    
+    if project.user_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to update this project",
         )
 
     # Update only provided fields
@@ -248,7 +284,7 @@ async def update_project(
 async def delete_project(
     file_id: str,
     session: AsyncSession = Depends(get_session),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user_from_cookie),
 ) -> None:
     """
     Delete a project by file_id.

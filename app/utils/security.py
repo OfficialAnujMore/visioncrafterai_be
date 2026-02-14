@@ -5,7 +5,7 @@ Security utilities for JWT token management and Google OAuth verification
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 import httpx
@@ -155,6 +155,49 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return payload
+
+
+async def get_current_user_from_cookie(request: Request) -> dict:
+    """
+    Get current authenticated user from JWT token in HttpOnly cookies.
+    Used for browser-based requests where cookies are sent automatically.
+    
+    Args:
+        request: FastAPI Request object containing cookies
+        
+    Returns:
+        dict: Token payload containing user_id
+        
+    Raises:
+        HTTPException 401: If token is invalid, expired, or missing
+    """
+    # Extract access token from cookies
+    access_token = request.cookies.get("access_token")
+    
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Access token not found in cookies",
+        )
+    
+    # Verify and decode the token
+    payload = verify_token(access_token)
+    
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired access token",
+        )
+    
+    # Verify token type is "access"
+    token_type = payload.get("type", "access")
+    if token_type != "access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type. Expected access token.",
         )
     
     return payload
