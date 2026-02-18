@@ -2,6 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime, timezone
 from enum import Enum
 from typing import TYPE_CHECKING
+import json
 
 if TYPE_CHECKING:
     from .user import User
@@ -28,6 +29,7 @@ class Project(SQLModel, table=True):
     width: int
     height: int
     file_type: FileType
+    canvas_state: str | None = Field(default=None, description="JSON serialized canvas state")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )

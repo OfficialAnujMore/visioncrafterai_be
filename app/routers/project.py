@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from datetime import datetime, timezone
+import json
 
 from app.schemas.project import (
     CreateProjectRequest,
@@ -16,6 +17,31 @@ from app.utils.imagekit import delete_image_from_imagekit
 from sqlalchemy import delete
 
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
+
+
+def serialize_project(project: Project) -> ProjectResponse:
+    """Helper function to serialize a Project model to ProjectResponse"""
+    canvas_state_dict = None
+    if project.canvas_state:
+        try:
+            canvas_state_dict = json.loads(project.canvas_state)
+        except (json.JSONDecodeError, TypeError):
+            canvas_state_dict = None
+    
+    return ProjectResponse(
+        id=project.id,
+        file_id=project.file_id,
+        user_id=project.user_id,
+        title=project.title,
+        project_url=project.project_url,
+        thumbnail_url=project.thumbnail_url,
+        width=project.width,
+        height=project.height,
+        file_type=project.file_type,
+        canvas_state=canvas_state_dict,
+        created_at=project.created_at,
+        updated_at=project.updated_at,
+    )
 
 
 @router.post(
@@ -43,6 +69,10 @@ async def create_project(
     """
     user_id = int(current_user.get("sub"))
     
+    canvas_state_json = None
+    if project_data.canvas_state is not None:
+        canvas_state_json = json.dumps(project_data.canvas_state)
+    
     db_project = Project(
         file_id=project_data.file_id,
         user_id=user_id,
@@ -52,6 +82,7 @@ async def create_project(
         width=project_data.width,
         height=project_data.height,
         file_type=project_data.file_type,
+        canvas_state=canvas_state_json,
     )
 
     try:
@@ -59,19 +90,7 @@ async def create_project(
         await session.commit()
         await session.refresh(db_project)
 
-        project_response = ProjectResponse(
-            id=db_project.id,
-            file_id=db_project.file_id,
-            user_id=db_project.user_id,
-            title=db_project.title,
-            project_url=db_project.project_url,
-            thumbnail_url=db_project.thumbnail_url,
-            width=db_project.width,
-            height=db_project.height,
-            file_type=db_project.file_type,
-            created_at=db_project.created_at,
-            updated_at=db_project.updated_at,
-        )
+        project_response = serialize_project(db_project)
 
         return ApiResponse(
             success=True, message="Project created successfully", data=project_response
@@ -124,19 +143,7 @@ async def get_project(
 
     return ApiResponse(
         success=True,
-        data=ProjectResponse(
-            id=project.id,
-            file_id=project.file_id,
-            user_id=project.user_id,
-            title=project.title,
-            project_url=project.project_url,
-            thumbnail_url=project.thumbnail_url,
-            width=project.width,
-            height=project.height,
-            file_type=project.file_type,
-            created_at=project.created_at,
-            updated_at=project.updated_at,
-        ),
+        data=serialize_project(project),
     )
 
 
@@ -173,22 +180,7 @@ async def get_user_projects(
     result = await session.execute(statement)
     projects = result.scalars().all()
 
-    projects_list = [
-        ProjectResponse(
-            id=project.id,
-            file_id= project.file_id,
-            user_id=project.user_id,
-            title=project.title,
-            project_url=project.project_url,
-            thumbnail_url=project.thumbnail_url,
-            width=project.width,
-            height=project.height,
-            file_type=project.file_type,
-            created_at=project.created_at,
-            updated_at=project.updated_at,
-        )
-        for project in projects
-    ]
+    projects_list = [serialize_project(project) for project in projects]
 
     return ApiResponse(success=True, data=projects_list)
 
@@ -247,6 +239,8 @@ async def update_project(
         project.height = project_data.height
     if project_data.file_type is not None:
         project.file_type = project_data.file_type
+    if project_data.canvas_state is not None:
+        project.canvas_state = json.dumps(project_data.canvas_state)
 
     project.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -255,18 +249,85 @@ async def update_project(
         await session.commit()
         await session.refresh(project)
 
-        project_response = ProjectResponse(
-            id=project.id,
-            user_id=project.user_id,
-            title=project.title,
-            project_url=project.project_url,
-            thumbnail_url=project.thumbnail_url,
-            width=project.width,
-            height=project.height,
-            file_type=project.file_type,
-            created_at=project.created_at,
-            updated_at=project.updated_at,
+        project_response = serialize_project(project)
+
+        return ApiResponse(
+            success=True, message="Project updated successfully", data=project_response
         )
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update project: {str(e)}",
+        )
+
+
+@router.patch("/{project_id}", response_model=ApiResponse[ProjectResponse])
+async def patch_update_project(
+    project_id: int,
+    project_data: UpdateProjectRequest,
+    session: AsyncSession = Depends(get_session),
+    current_user: dict = Depends(get_current_user_from_cookie),
+) -> ApiResponse[ProjectResponse]:
+    """
+    Partially update an existing project (PATCH).
+
+    Args:
+        project_id: The ID of the project to update
+        project_data: Fields to update
+        session: Database session
+        current_user: Current authenticated user from JWT
+
+    Returns:
+        ProjectResponse: The updated project
+
+    Raises:
+        HTTPException 404: If project not found
+        HTTPException 403: If user is not authorized to update the project
+    """
+    current_user_id = int(current_user.get("sub"))
+    
+    statement = select(Project).where(Project.id == project_id)
+    result = await session.execute(statement)
+    project = result.scalars().first()
+
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project with id {project_id} not found",
+        )
+    
+    if project.user_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to update this project",
+        )
+
+    # Update only provided fields
+    if project_data.title is not None:
+        project.title = project_data.title
+    if project_data.project_url is not None:
+        project.project_url = project_data.project_url
+    if project_data.thumbnail_url is not None:
+        project.thumbnail_url = project_data.thumbnail_url
+    if project_data.width is not None:
+        project.width = project_data.width
+    if project_data.height is not None:
+        project.height = project_data.height
+    if project_data.file_type is not None:
+        project.file_type = project_data.file_type
+    if project_data.canvas_state is not None:
+        project.canvas_state = json.dumps(project_data.canvas_state)
+
+    project.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    try:
+        session.add(project)
+        await session.commit()
+        await session.refresh(project)
+
+        project_response = serialize_project(project)
 
         return ApiResponse(
             success=True, message="Project updated successfully", data=project_response

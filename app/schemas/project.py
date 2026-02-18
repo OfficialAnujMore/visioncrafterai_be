@@ -14,6 +14,7 @@ class CreateProjectRequest(BaseModel):
     width: int
     height: int
     file_type: Literal["video", "image"]
+    canvas_state: dict | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -27,6 +28,7 @@ class ProjectResponse(BaseModel):
     width: int
     height: int
     file_type: Literal["video", "image"]
+    canvas_state: dict | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -40,3 +42,4 @@ class UpdateProjectRequest(BaseModel):
     width: int | None = None
     height: int | None = None
     file_type: Literal["video", "image"] | None = None
+    canvas_state: dict | None = None
