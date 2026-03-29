@@ -13,7 +13,7 @@ from app.schemas.common import ApiResponse
 from app.models.project import Project
 from app.database import get_session
 from app.utils.security import get_current_user_from_cookie
-from app.utils.imagekit import delete_image_from_imagekit
+from app.utils.imagekit import delete_image_from_imagekit, rename_image_in_imagekit
 from sqlalchemy import delete
 
 router = APIRouter(prefix="/api/projects", tags=["Projects"])
@@ -228,6 +228,10 @@ async def update_project(
 
     # Update only provided fields
     if project_data.title is not None:
+        if project_data.title != project.title:
+            imagekit_details = await rename_image_in_imagekit(project.file_id, project_data.title)
+            project.project_url = imagekit_details.get("url", project.project_url)
+            project.thumbnail_url = imagekit_details.get("thumbnail", project.thumbnail_url)
         project.title = project_data.title
     if project_data.project_url is not None:
         project.project_url = project_data.project_url
@@ -306,6 +310,10 @@ async def patch_update_project(
 
     # Update only provided fields
     if project_data.title is not None:
+        if project_data.title != project.title:
+            imagekit_details = await rename_image_in_imagekit(project.file_id, project_data.title)
+            project.project_url = imagekit_details.get("url", project.project_url)
+            project.thumbnail_url = imagekit_details.get("thumbnail", project.thumbnail_url)
         project.title = project_data.title
     if project_data.project_url is not None:
         project.project_url = project_data.project_url
