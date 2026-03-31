@@ -105,8 +105,8 @@ async def google_auth(
             key="access_token",
             value=access_token,
             httponly=True,  # Prevents JavaScript access (XSS protection)
-            secure=not settings.DEBUG,  # Only HTTPS in production
-            samesite="lax",  # CSRF protection
+            secure=True,  # Always HTTPS (required for SameSite=None)
+            samesite="none",  # Allow cross-site cookies (Netlify frontend ↔ Vercel backend)
             max_age=900,  # 15 minutes
             path="/",
         )
@@ -116,8 +116,8 @@ async def google_auth(
             key="refresh_token",
             value=refresh_token,
             httponly=True,  # Prevents JavaScript access
-            secure=not settings.DEBUG,  # Only HTTPS in production
-            samesite="lax",  # CSRF protection
+            secure=True,  # Always HTTPS (required for SameSite=None)
+            samesite="none",  # Allow cross-site cookies (Netlify frontend ↔ Vercel backend)
             max_age=604800,  # 7 days
             path="/",
         )
@@ -184,8 +184,8 @@ async def refresh_access_token(request: Request):
             key="access_token",
             value=new_access_token,
             httponly=True,
-            secure=not settings.DEBUG,
-            samesite="lax",
+            secure=True,  # Always HTTPS (required for SameSite=None)
+            samesite="none",  # Allow cross-site cookies (Netlify frontend ↔ Vercel backend)
             max_age=900,  # 15 minutes
             path="/",
         )
@@ -222,16 +222,16 @@ async def logout():
         key="access_token",
         path="/",
         httponly=True,
-        samesite="lax",
-        secure=not settings.DEBUG,
+        samesite="none",
+        secure=True,
     )
     
     response.delete_cookie(
         key="refresh_token",
         path="/",
         httponly=True,
-        samesite="lax",
-        secure=not settings.DEBUG,
+        samesite="none",
+        secure=True,
     )
     
     print("🔓 [AUTH] User logged out - both cookies cleared")
