@@ -1,2 +1,13 @@
 fastapi[standard]
 uvicorn[standard]
+psycopg[binary]>=3.1
+sqlmodel>=0.0.8
+asyncpg>=0.28
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.6
+pydantic-settings==2.2.1
+greenlet>=3.1.0
+email-validator>=2.1.0
+httpx>=0.25.0
+imagekitio==5.0.0
+dotenv
