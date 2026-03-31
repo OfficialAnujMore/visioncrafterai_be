@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -18,6 +17,10 @@ class Settings(BaseSettings):
     # App Configuration
     APP_NAME: str
     DEBUG: bool
+
+    # Startup behavior
+    DB_CREATE_TABLES_ON_STARTUP: bool = False
+    DB_FAIL_FAST_ON_STARTUP_ERROR: bool = False
 
     class Config:
         env_file = ".env"

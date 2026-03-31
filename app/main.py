@@ -12,13 +12,22 @@ from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Create tables on application startup
-    print("🔄 Creating database tables...")
-    await create_db_and_tables()
-    print("✅ Database tables created successfully!")
+    # Startup: optionally create tables (recommended only for local/dev)
+    if settings.DB_CREATE_TABLES_ON_STARTUP:
+        print("Creating database tables on startup...")
+        try:
+            await create_db_and_tables()
+            print("Database tables created successfully")
+        except Exception as exc:
+            print(f"Startup database initialization failed: {exc}")
+            if settings.DB_FAIL_FAST_ON_STARTUP_ERROR:
+                raise
+            print("Continuing startup because DB_FAIL_FAST_ON_STARTUP_ERROR is false")
+    else:
+        print("Skipping startup table creation; use Alembic migrations for schema changes")
     yield
     # Shutdown: Cleanup if needed
-    print("👋 Shutting down application...")
+    print("Shutting down application...")
 
 
 app = FastAPI(
