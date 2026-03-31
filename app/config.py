@@ -17,10 +17,16 @@ class Settings(BaseSettings):
     # App Configuration
     APP_NAME: str
     DEBUG: bool
+    CORS_ALLOW_ORIGINS: str = "http://localhost:5173,https://vision-crafter-ai.netlify.app"
 
     # Startup behavior
     DB_CREATE_TABLES_ON_STARTUP: bool = False
     DB_FAIL_FAST_ON_STARTUP_ERROR: bool = False
+
+    @property
+    def cors_allow_origins(self) -> list[str]:
+        """Parse comma-separated CORS origins from environment."""
+        return [origin.strip() for origin in self.CORS_ALLOW_ORIGINS.split(",") if origin.strip()]
 
     class Config:
         env_file = ".env"
