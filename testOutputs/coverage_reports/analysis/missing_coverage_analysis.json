@@ -1,0 +1,56 @@
+{
+  "report_date": "2026-04-03",
+  "total_missing_statements": 57,
+  "analysis": [
+    {
+      "priority": "HIGH",
+      "module": "app/routers/auth.py",
+      "lines": 135,
+      "gap": "User update race condition (concurrent updates)",
+      "scenario": "Multiple simultaneous login requests for same user",
+      "recommendation": "TC-AUTH-RACE-001: Test with asyncio.gather()",
+      "estimated_effort_hours": 2,
+      "business_impact": "Potential duplicate user entries or state corruption"
+    },
+    {
+      "priority": "HIGH",
+      "module": "app/routers/project.py",
+      "lines": 225,
+      "gap": "JSON canvas state deserializer",
+      "scenario": "Malformed or corrupted JSON in canvas_state field",
+      "recommendation": "TC-EDGE-006: Test with invalid JSON, missing fields",
+      "estimated_effort_hours": 2,
+      "business_impact": "Backend crash or data loss"
+    },
+    {
+      "priority": "HIGH",
+      "module": "app/utils/security.py",
+      "lines": 92,
+      "gap": "Token signature verification failure",
+      "scenario": "Tampered or malformed JWT signatures",
+      "recommendation": "TC-AUTH-INVALID-SIG-001: Mock with invalid signatures",
+      "estimated_effort_hours": 1,
+      "business_impact": "Security vulnerability - authentication bypass"
+    },
+    {
+      "priority": "HIGH",
+      "module": "app/utils/imagekit.py",
+      "lines": 45,
+      "gap": "ImageKit API rate limit (429) response",
+      "scenario": "API rate limit exceeded",
+      "recommendation": "TC-IMK-RATE-LIMIT-001: Mock 429 response",
+      "estimated_effort_hours": 1,
+      "business_impact": "Poor error handling for rate-limited scenarios"
+    },
+    {
+      "priority": "HIGH",
+      "module": "app/database.py",
+      "lines": "35, 42",
+      "gap": "Connection pool exhaustion and deadlock recovery",
+      "scenario": "Database connection pool limit reached or transaction deadlock",
+      "recommendation": "TC-DB-CONN-001, TC-DB-DEADLOCK-001",
+      "estimated_effort_hours": 5,
+      "business_impact": "Service availability impact, failed requests"
+    }
+  ]
+}

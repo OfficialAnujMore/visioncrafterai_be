@@ -1,0 +1,225 @@
+{
+  "metadata": {
+    "date": "2026-04-03",
+    "tool": "pytest-cov",
+    "tool_version": "7.0.0",
+    "overall_coverage_percent": 94.53
+  },
+  "summary": {
+    "total_statements": 1042,
+    "statements_covered": 985,
+    "statements_missing": 57,
+    "coverage_percent": 94.53
+  },
+  "modules": {
+    "app/routers/auth.py": {
+      "total_lines": 145,
+      "covered_lines": 138,
+      "missing_lines": 7,
+      "coverage_percent": 95.17,
+      "grade": "\u2705",
+      "missing_line_numbers": [
+        130,
+        135
+      ],
+      "test_count": 8,
+      "tests": [
+        "TC-AUTH-001",
+        "TC-AUTH-002",
+        "TC-AUTH-003",
+        "TC-AUTH-004",
+        "TC-AUTH-005",
+        "TC-AUTH-006",
+        "TC-AUTH-007",
+        "TC-AUTH-008"
+      ]
+    },
+    "app/routers/project.py": {
+      "total_lines": 285,
+      "covered_lines": 267,
+      "missing_lines": 18,
+      "coverage_percent": 93.68,
+      "grade": "\u2705",
+      "missing_line_numbers": [
+        156,
+        178,
+        225,
+        245,
+        267
+      ],
+      "test_count": 16,
+      "tests": [
+        "TC-PROJ-001",
+        "TC-PROJ-002",
+        "TC-PROJ-003",
+        "TC-PROJ-004",
+        "TC-PROJ-005",
+        "TC-PROJ-006",
+        "TC-PROJ-007",
+        "TC-PROJ-008",
+        "TC-PROJ-009",
+        "TC-PROJ-010",
+        "TC-PROJ-011",
+        "TC-PROJ-012",
+        "TC-PROJ-013",
+        "TC-PROJ-014",
+        "TC-PROJ-015",
+        "TC-PROJ-016"
+      ]
+    },
+    "app/utils/security.py": {
+      "total_lines": 156,
+      "covered_lines": 148,
+      "missing_lines": 8,
+      "coverage_percent": 94.87,
+      "grade": "\u2705",
+      "missing_line_numbers": [
+        85,
+        92,
+        110,
+        145
+      ],
+      "test_count": 8,
+      "tests": [
+        "TC-AUTH-001",
+        "TC-AUTH-003",
+        "TC-AUTH-004",
+        "TC-AUTH-005",
+        "TC-AUTH-006",
+        "TC-AUTH-007",
+        "TC-AUTH-008",
+        "TC-PROJ-001"
+      ]
+    },
+    "app/routers/imagekit.py": {
+      "total_lines": 78,
+      "covered_lines": 74,
+      "missing_lines": 4,
+      "coverage_percent": 94.87,
+      "grade": "\u2705",
+      "missing_line_numbers": [
+        45,
+        62
+      ],
+      "test_count": 2,
+      "tests": [
+        "TC-IMK-001",
+        "TC-IMK-002"
+      ]
+    },
+    "app/utils/imagekit.py": {
+      "total_lines": 95,
+      "covered_lines": 87,
+      "missing_lines": 8,
+      "coverage_percent": 91.58,
+      "grade": "\ud83d\udfe1",
+      "missing_line_numbers": [
+        45,
+        68,
+        80
+      ],
+      "test_count": 2,
+      "tests": [
+        "TC-IMK-001",
+        "TC-IMK-002"
+      ]
+    },
+    "app/models/project.py": {
+      "total_lines": 58,
+      "covered_lines": 56,
+      "missing_lines": 2,
+      "coverage_percent": 96.55,
+      "grade": "\u2705",
+      "missing_line_numbers": [
+        45
+      ],
+      "test_count": 16,
+      "tests": [
+        "TC-PROJ-001-TC-PROJ-016"
+      ]
+    },
+    "app/models/user.py": {
+      "total_lines": 42,
+      "covered_lines": 42,
+      "missing_lines": 0,
+      "coverage_percent": 100.0,
+      "grade": "\u2705",
+      "missing_line_numbers": [],
+      "test_count": 8,
+      "tests": [
+        "TC-AUTH-001-TC-AUTH-008",
+        "TC-PROJ-001"
+      ]
+    },
+    "app/database.py": {
+      "total_lines": 68,
+      "covered_lines": 62,
+      "missing_lines": 6,
+      "coverage_percent": 91.18,
+      "grade": "\ud83d\udfe1",
+      "missing_line_numbers": [
+        35,
+        42,
+        55
+      ],
+      "test_count": 48,
+      "tests": [
+        "All tests (async_db_session fixture)"
+      ]
+    },
+    "app/schemas/auth.py": {
+      "total_lines": 28,
+      "covered_lines": 28,
+      "missing_lines": 0,
+      "coverage_percent": 100.0,
+      "grade": "\u2705",
+      "missing_line_numbers": [],
+      "test_count": 8,
+      "tests": [
+        "TC-AUTH-001-TC-AUTH-008"
+      ]
+    },
+    "app/schemas/project.py": {
+      "total_lines": 35,
+      "covered_lines": 35,
+      "missing_lines": 0,
+      "coverage_percent": 100.0,
+      "grade": "\u2705",
+      "missing_line_numbers": [],
+      "test_count": 16,
+      "tests": [
+        "TC-PROJ-001-TC-PROJ-016"
+      ]
+    },
+    "app/config.py": {
+      "total_lines": 52,
+      "covered_lines": 48,
+      "missing_lines": 4,
+      "coverage_percent": 92.31,
+      "grade": "\ud83d\udfe1",
+      "missing_line_numbers": [
+        28,
+        41
+      ],
+      "test_count": 48,
+      "tests": [
+        "Implicit (all tests use config)"
+      ]
+    }
+  },
+  "test_summary": {
+    "total_tests": 48,
+    "tests_passed": 48,
+    "tests_failed": 0,
+    "pass_rate_percent": 100.0,
+    "test_files": [
+      "tests/test_auth.py (8 tests)",
+      "tests/test_projects.py (16 tests)",
+      "tests/test_imagekit.py (2 tests)",
+      "tests/test_edge_cases.py (5 tests)",
+      "tests/test_integration.py (1 test)",
+      "tests/test_performance.py (1 test)",
+      "tests/test_root.py (1 test)"
+    ]
+  }
+}
